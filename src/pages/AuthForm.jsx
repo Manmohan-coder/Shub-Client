@@ -25,8 +25,8 @@ export default function AuthForm() {
     );
 }
 
-const SocialButton = ({ icon }) => (
-    <button className="p-3 border border-gray-300 rounded-full hover:bg-gray-100 transition">
-        {icon}
-    </button>
-);
+// const SocialButton = ({ icon }) => (
+//     <button className="p-3 border border-gray-300 rounded-full hover:bg-gray-100 transition">
+//         {icon}
+//     </button>
+// );

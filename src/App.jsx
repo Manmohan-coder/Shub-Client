@@ -6,6 +6,9 @@ import Contact from "./pages/Contact"
 import CategoryGrid from "./pages/CategoryGrid"
 import Layout from "./pages/Layout"
 import ProductGrid from "./pages/CopyCard"
+import ProductDetails from "./pages/ProductDetails"
+import AdminDashboard from "./pages/admin/AdminDash"
+
 
 
 
@@ -19,6 +22,8 @@ const App = () => {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/shop" element={<CategoryGrid />} />
+        <Route path="/product/:id" element={<ProductDetails />} />
+        <Route path="/admin/me" element={<AdminDashboard />} />
       </Routes>
     </Layout>
   )

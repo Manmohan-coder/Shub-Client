@@ -133,8 +133,8 @@ const HeaderSlider = () => {
                 loop
                 className="w-full h-[400px]"
             >
-                {slides.map((slide) => (
-                    <SwiperSlide key={slide.id}>
+                {slides.map((slide,idx) => (
+                    <SwiperSlide key={idx}>
                         <div className="relative w-full h-full">
                             <img
                                 src={slide.image}
