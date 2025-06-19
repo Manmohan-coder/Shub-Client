@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutUser } from '../stores/reducers/userSlice';
 import {
     RiMenuFill,
     RiCloseLargeLine,
@@ -9,10 +12,6 @@ import {
     RiUser3Fill,
     RiUserSettingsFill,
 } from '@remixicon/react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { asyncLogoutUser, checkAuthStatus } from '../stores/actions/userActions';
-
 
 const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
@@ -20,19 +19,17 @@ const Navbar = () => {
     const profileRef = useRef(null);
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    
-    const isLoggedIn = useSelector((state) => state.user?.isAuthenticated || false);
-    const user = useSelector((state) => state.user?.user || null);
 
-    useEffect(() => {
-        // Check authentication status on component mount
-        dispatch(checkAuthStatus());
-    }, [dispatch]);
+    // Fix: get user and isAuthenticated from state.user, and handle possible user shape
+    // Also, add fallback for user being undefined
+    const userState = useSelector((state) => state.user || {});
+    const isAuthenticated = userState.isAuthenticated;
+    const user = userState.user;
 
     useEffect(() => {
         // Handle click outside of profile menu
-        const handleClickOutside = (event) => {
-            if (profileRef.current && !profileRef.current.contains(event.target)) {
+        const handleClickOutside = (e) => {
+            if (profileRef.current && !profileRef.current.contains(e.target)) {
                 setProfileMenuOpen(false);
             }
         };
@@ -41,24 +38,45 @@ const Navbar = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Make handleLogout async to wait for logoutUser API call
     const handleLogout = async () => {
-        await dispatch(asyncLogoutUser());
-        setProfileMenuOpen(false);
-        navigate('/add-user');
+        try {
+            await dispatch(logoutUser()).unwrap();
+            setProfileMenuOpen(false);
+            navigate('/add-user');
+        } catch (error) {
+            setProfileMenuOpen(false);
+            navigate('/add-user');
+        }
+    };
+
+    // Helper to get display name
+    const getDisplayName = (user) => {
+        if (!user) return 'User';
+        if (user.fullname && typeof user.fullname === 'object' && user.fullname.firstname) {
+            return user.fullname.firstname;
+        }
+        if (user.fullname && typeof user.fullname === 'string') {
+            return user.fullname;
+        }
+        if (user.username) {
+            return user.username;
+        }
+        return 'User';
     };
 
     return (
         <nav className="bg-[#FFCCEA] shadow-md">
             <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                 {/* Logo */}
-                <div className="text-2xl font-bold text-pink-700">
+                <div className="text-2xl font-bold text-pink-700 cursor-pointer" onClick={() => navigate('/')}>
                     🎁 ShubGift
                 </div>
 
                 {/* Desktop NavLinks */}
                 <div className="hidden md:flex space-x-6 items-center">
                     <NavLink to="/" className={({ isActive }) => `hover:text-pink-700 font-medium ${isActive ? 'text-pink-700' : ''}`}>Home</NavLink>
-                    <NavLink to="/shop" className={({ isActive }) => `hover:text-pink-700 font-medium ${isActive ? 'text-pink-700' : ''}`}>Category</NavLink>
+                    <NavLink to="/shop" className={({ isActive }) => `hover:text-pink-700 font-medium ${isActive ? 'text-pink-700' : ''}`}>Shop</NavLink>
                     <NavLink to="/about" className={({ isActive }) => `hover:text-pink-700 font-medium ${isActive ? 'text-pink-700' : ''}`}>About</NavLink>
                     <NavLink to="/contact" className={({ isActive }) => `hover:text-pink-700 font-medium ${isActive ? 'text-pink-700' : ''}`}>Contact</NavLink>
                 </div>
@@ -72,7 +90,7 @@ const Navbar = () => {
                             placeholder="Search gifts..."
                             className="px-3 py-1 rounded-full border border-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
                         />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-pink-600">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 transform cursor-pointer text-pink-600">
                             <RiSearchLine />
                         </span>
                     </div>
@@ -84,22 +102,24 @@ const Navbar = () => {
                     </div>
 
                     {/* Auth Logic */}
-                    {isLoggedIn ? (
+                    {isAuthenticated ? (
                         <div className="relative" ref={profileRef}>
-                            <button 
-                                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                            <button
+                                onClick={() => setProfileMenuOpen((prev) => !prev)}
                                 className="flex items-center space-x-2 text-pink-600 hover:text-pink-800 transition-colors duration-200"
                             >
                                 <RiUser3Fill size={22} />
-                                <span className="hidden md:inline">{user?.name || 'Profile'}</span>
+                                <span className="hidden md:inline">
+                                    Hi, {getDisplayName(user)}
+                                </span>
                             </button>
-                            
+
                             {/* Profile Dropdown */}
                             {profileMenuOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-100">
+                                <div className="absolute right-0 mt-2 w-48 bg-black rounded-md shadow-lg py-1 z-50 border">
                                     <NavLink
                                         to="/profile"
-                                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-pink-50 transition-colors duration-200"
+                                        className="flex items-center px-4 py-2 text-sm text-white hover:text-pink-700 font-medium transition-colors duration-200"
                                         onClick={() => setProfileMenuOpen(false)}
                                     >
                                         <RiUserSettingsFill className="mr-2" />
@@ -107,7 +127,7 @@ const Navbar = () => {
                                     </NavLink>
                                     <button
                                         onClick={handleLogout}
-                                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-pink-50 transition-colors duration-200"
+                                        className="flex items-center w-full px-4 py-2 text-sm text-white hover:text-pink-700 font-medium transition-colors duration-200"
                                     >
                                         <RiLogoutCircleRLine className="mr-2" />
                                         Logout
@@ -116,18 +136,17 @@ const Navbar = () => {
                             )}
                         </div>
                     ) : (
-                        <NavLink 
-                            to="/add-user" 
+                        <NavLink
+                            to="/add-user"
                             className="text-pink-600 flex items-center space-x-2 hover:text-pink-800 transition-colors duration-200"
                             title="Login/Register"
                         >
                             <RiUserAddFill size={22} />
-                            <span className="hidden md:inline">Login</span>
                         </NavLink>
                     )}
 
                     {/* Mobile Menu Toggle */}
-                    <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
+                    <button className="md:hidden" onClick={() => setMenuOpen((prev) => !prev)}>
                         {menuOpen ? <RiCloseLargeLine className="text-pink-600" /> : <RiMenuFill className="text-pink-600" />}
                     </button>
                 </div>
@@ -147,7 +166,7 @@ const Navbar = () => {
                             placeholder="Search..."
                             className="w-full px-3 py-1 rounded-full border border-zinc-500 focus:outline-none focus:ring-2 focus:ring-pink-400"
                         />
-                        <span className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-pink-600">
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 transform cursor-pointer text-pink-600">
                             <RiSearchLine />
                         </span>
                     </div>

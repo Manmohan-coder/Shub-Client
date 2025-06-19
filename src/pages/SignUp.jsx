@@ -1,30 +1,30 @@
-import { useState } from "react"
-import { RiEyeLine, RiEyeCloseLine, RiMailCheckLine, RiUserAddLine } from "@remixicon/react"
-import { ToastContainer, toast } from 'react-toastify';
-import { useDispatch } from "react-redux";
 import { useForm } from "react-hook-form";
-import { asyncRegisterUser } from "../stores/actions/userActions";
+import { useDispatch } from "react-redux";
+import { useState } from "react";
+import { RiEyeLine, RiEyeCloseLine, RiMailCheckLine, RiUserAddLine } from "@remixicon/react";
+import { ToastContainer, toast } from "react-toastify";
+import { registerUser } from "../stores/reducers/userSlice";
+
 
 const SignUp = () => {
     const [showPassword, setShowPassword] = useState(false);
-    const dispatch = useDispatch()
-    const { register, handleSubmit, reset, formState: { errors } } = useForm()
-
-
+    const dispatch = useDispatch();
+    const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
     const submitHandler = async (data) => {
         const userData = {
             fullname: {
                 firstname: data.firstname,
-                lastname: data.lastname
+                lastname: data.lastname,
             },
             email: data.email,
-            password: data.password
+            password: data.password,
         };
         try {
-            await dispatch(asyncRegisterUser(userData)).unwrap()
-            toast.success('User Register successfully!')
-            reset()
+            await dispatch(registerUser(userData)).unwrap();
+            toast.success("User Register successfully!");
+            reset();
+
         } catch (error) {
             if (error?.response?.data?.message) {
                 toast.error(error.response.data.message);
@@ -35,11 +35,12 @@ const SignUp = () => {
                 toast.error("Registration failed. Please try again.");
             }
         }
-    }
+    };
 
     const togglePassword = () => {
-        setShowPassword(prev => !prev)
-    }
+        setShowPassword((prev) => !prev);
+    };
+
     return (
         <>
             <ToastContainer autoClose={1500} />
@@ -101,7 +102,7 @@ const SignUp = () => {
                 </form>
             </div>
         </>
-    )
-}
+    );
+};
 
 export default SignUp
